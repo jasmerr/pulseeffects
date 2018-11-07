@@ -1,5 +1,5 @@
 #include <stdio.h>
-#define NUMBANDS  15
+#define NUMBANDS  22
 #define GAP  10
 #define Q_CONSTANT 1
 
@@ -8,22 +8,51 @@ struct band {
   float frequency;
   float width;
 };
-void add_beginning(FILE *output)
+void add_beginning(FILE *beginning, FILE *output)
 {
-  fprintf(output, "{\n  \"equalizer\": {");
-  fprintf(output, "\n   \"state\": \"true\",");
-  fprintf(output, "\n   \"num-bands\": \"%d\",", NUMBANDS);
-  fprintf(output, "\n   \"input-gain\": \"0\",");
-  fprintf(output, "\n   \"output-gain\": \"0\",");
+  char c;
+  // copy the non eq parts of the preset into the output
+  while ((c = fgetc(beginning)) != EOF) {
+    fputc(c, output);
+  }
+  fprintf(output, "        \"equalizer\": {");
+  fprintf(output, "\n            \"state\": \"true\",");
+  fprintf(output, "\n            \"num-bands\": \"%d\",", NUMBANDS);
+  fprintf(output, "\n            \"input-gain\": \"0\",");
+  fprintf(output, "\n            \"output-gain\": \"0\",");
 }
-void add_band(FILE *output, int bandNum, struct band this_band)
+void add_band(FILE *output, int bandNum, struct band this_band, int end)
  {
-  fprintf(output, "\n   \"band%d\": {", bandNum);
-  fprintf(output, "\n     \"gain\": \"%f\",", this_band.gain);
-  fprintf(output, "\n     \"frequency\": \"%f\",", this_band.frequency);
-  fprintf(output, "\n     \"width\": \"%f\",", this_band.width);
-  fprintf(output, "\n     \"type\": \"peak\"");
-  fprintf(output, "\n   },");
+  fprintf(output, "\n            \"band%d\": {", bandNum);
+  if (this_band.gain >= 12) {
+    fprintf(output, "\n                \"gain\": \"%f\",", (float)12);
+  }
+  else if (this_band.gain <=-24) {
+    fprintf(output, "\n                \"gain\": \"%f\",", (float)-24);
+  }
+  else {
+    fprintf(output, "\n                \"gain\": \"%f\",", this_band.gain);
+  }
+  fprintf(output, "\n                \"gain\": \"%f\",", this_band.gain);
+  fprintf(output, "\n                \"frequency\": \"%f\",", this_band.frequency);
+  fprintf(output, "\n                \"width\": \"%f\",", this_band.width);
+  fprintf(output, "\n                \"type\": \"peak\"");
+  if (end) {
+    fprintf(output, "\n            }");
+  }
+  else {
+    fprintf(output, "\n           },");
+  }
+}
+
+void end_file(FILE *end, FILE *output)
+{
+  char c;
+  fprintf(output, "\n        },");
+  while ((c = fgetc(end)) != EOF) {
+    fputc(c, output);
+  }
+  // fprintf(output, "\n }\n}");
 }
 
 int read_bands(FILE *in, struct band bands[], int *counter)
@@ -47,20 +76,28 @@ int read_bands(FILE *in, struct band bands[], int *counter)
 void main()
 {
   int counter = 0, counter2 = 0;
-  FILE *frd, *preset;
+  FILE *frd, *beginning, *end, *preset;
   struct band bands[230];
 
   frd = fopen("Volume40FeetTouchEQ.frd", "r");
-  preset = fopen ("preset.json", "w+");
+  beginning = fopen("baseline_beginning.json", "r");
+  end = fopen("baseline_ending.json", "r");
+  preset = fopen ("preset.json", "w");
 
-  add_beginning(preset);
+  add_beginning(beginning, preset);
   read_bands(frd, bands, &counter);
   for (int i = 0; i < 220; i = i + GAP)
   {
-    add_band(preset, counter2, bands[i]);
+    if (i + GAP < 220) {
+      add_band(preset, counter2, bands[i], 0);
+    }
+    else {
+      add_band(preset, counter2, bands[i], 1);
+    }
     counter2++;
   }
-  fprintf(preset, "\n}");
+  end_file(end, preset);
+
   fclose(frd);
   fclose(preset);
 }
