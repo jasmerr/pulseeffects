@@ -1,7 +1,7 @@
 #include <stdio.h>
 #define NUMBANDS  15
 #define GAP  10
-#define Q_CONSTANT 1
+#define Q_CONSTANT 400
 
 struct band {
   float gain;
@@ -10,20 +10,20 @@ struct band {
 };
 void add_beginning(FILE *output)
 {
-  fprintf(output, "{\n  \"equalizer\": {");
-  fprintf(output, "\n   \"state\": \"true\",");
-  fprintf(output, "\n   \"num-bands\": \"%d\",", NUMBANDS);
-  fprintf(output, "\n   \"input-gain\": \"0\",");
-  fprintf(output, "\n   \"output-gain\": \"0\",");
+  fprintf(output, "{\n    \"equalizer\": {");
+  fprintf(output, "\n        \"state\": \"true\",");
+  fprintf(output, "\n        \"num-bands\": \"%d\",", NUMBANDS);
+  fprintf(output, "\n        \"input-gain\": \"0\",");
+  fprintf(output, "\n        \"output-gain\": \"0\",");
 }
 void add_band(FILE *output, int bandNum, struct band this_band)
  {
-  fprintf(output, "\n   \"band%d\": {", bandNum);
-  fprintf(output, "\n     \"gain\": \"%f\",", this_band.gain);
-  fprintf(output, "\n     \"frequency\": \"%f\",", this_band.frequency);
-  fprintf(output, "\n     \"width\": \"%f\",", this_band.width);
-  fprintf(output, "\n     \"type\": \"peak\"");
-  fprintf(output, "\n   },");
+  fprintf(output, "\n        \"band%d\": {", bandNum);
+  fprintf(output, "\n             \"gain\": \"%f0000000\",", this_band.gain);
+  fprintf(output, "\n             \"frequency\": \"%f0000000\",", this_band.frequency);
+  fprintf(output, "\n             \"width\": \"%f0000000\",", this_band.width);
+  fprintf(output, "\n             \"type\": \"peak\"");
+  fprintf(output, "\n    }");
 }
 
 int read_bands(FILE *in, struct band bands[], int *counter)
