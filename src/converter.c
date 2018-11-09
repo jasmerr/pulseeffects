@@ -1,7 +1,7 @@
 #include <stdio.h>
 #define NUMBANDS  22
 #define GAP  10
-#define Q_CONSTANT 400
+#define Q_CONSTANT 10
 
 struct band {
   float gain;
@@ -34,7 +34,6 @@ void add_band(FILE *output, int bandNum, struct band this_band, int end)
   else {
     fprintf(output, "\n                \"gain\": \"%f\",", this_band.gain);
   }
-  fprintf(output, "\n                \"gain\": \"%f\",", this_band.gain);
   fprintf(output, "\n                \"frequency\": \"%f\",", this_band.frequency);
   fprintf(output, "\n                \"width\": \"%f\",", this_band.width);
   fprintf(output, "\n                \"type\": \"peak\"");
@@ -55,6 +54,35 @@ void end_file(FILE *end, FILE *output)
   }
   // fprintf(output, "\n }\n}");
 }
+
+void calculate_widths(struct band bands[])
+{
+   bands[0].width = 3; // bad number
+   for (int i = 1; i < NUMBANDS; i++)
+   {
+	float prev, next;
+	prev = bands[i].frequency - bands[i - 1].frequency;
+	if (i != NUMBANDS - 1)
+	{
+		next = bands[i + 1].frequency - bands[i].frequency;
+
+		if (next >= prev)
+		{
+		   bands[i].width = prev / 2;
+		}
+		else
+		{
+		   bands[i].width = next / 2;
+		}
+	}
+	else
+	{
+		bands[i].width = prev / 2;
+	}
+
+   }
+}
+
 
 int read_bands(FILE *in, struct band bands[], int *counter)
 {
@@ -78,7 +106,7 @@ void main()
 {
   int counter = 0, counter2 = 0;
   FILE *frd, *beginning, *end, *preset;
-  struct band bands[230];
+  struct band bands[230], final_bands[NUMBANDS];
 
   frd = fopen("Volume40FeetTouchEQ.frd", "r");
   beginning = fopen("baseline_beginning.json", "r");
@@ -87,16 +115,22 @@ void main()
 
   add_beginning(beginning, preset);
   read_bands(frd, bands, &counter);
+
   for (int i = 0; i < 220; i = i + GAP)
   {
-    if (i + GAP < 220) {
-      add_band(preset, counter2, bands[i], 0);
-    }
-    else {
-      add_band(preset, counter2, bands[i], 1);
-    }
+    final_bands[counter2] = bands[i];//add_band(preset, counter2, bands[i], 0);
     counter2++;
   }
+  calculate_widths(final_bands);
+  for (int i = 0; i < NUMBANDS; i++)
+	{
+		  if (i + 1  != NUMBANDS) {
+     		 add_band(preset, i, final_bands[i], 0);
+  		  }
+   		 else {
+    		  add_band(preset, i, final_bands[i], 1);
+  		  }
+	}
   end_file(end, preset);
 
   fclose(frd);
