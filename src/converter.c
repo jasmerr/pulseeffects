@@ -96,7 +96,6 @@ void calculate_widths(struct band bands[])
 	{
 		bands[i].width = prev / 2;
 	}
-
    }
 }
 
