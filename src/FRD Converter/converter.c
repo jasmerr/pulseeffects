@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+
 #define NUMBANDS  22
 #define GAP  10
 #define Q_CONSTANT 10
@@ -10,8 +12,8 @@ struct band {
 };
 /*
 / Adds the beginning section of the preset file to the output stream.
-/ Beginning is a file that contains hard coded lines of text that are required for proper 
-/ functionality. 
+/ Beginning is a file that contains hard coded lines of text that are required for proper
+/ functionality.
 */
 void add_beginning(FILE *beginning, FILE *output)
 {
@@ -120,17 +122,39 @@ int read_bands(FILE *in, struct band bands[], int *counter)
     (*counter)++;
   }
 }
-
-void main()
+// The name of the frd file to be read must be the first command line argument
+void main(int argc, char *argv[])
 {
   int counter = 0, counter2 = 0;
+  char frdName[20];
   FILE *frd, *beginning, *end, *preset;
   struct band bands[230], final_bands[NUMBANDS];
 
-  frd = fopen("eq.frd", "r");
+  if (argc == 2) {
+	frd = fopen((char*)argv[1], "r");
+  }
+
+  else {
+	   printf("Please enter the name of the frd as an argument and try again.\n");
+     exit(-1);
+  }
+  if (frd == NULL) {
+    printf("FRD file failed to be read.\n");
+    exit(-2);
+  }
   beginning = fopen("baseline_beginning.json", "r");
   end = fopen("baseline_ending.json", "r");
+  if (beginning == NULL || end == NULL) {
+    printf("Either baseline_beginning.json or baseline_ending.json failed to be read.\n");
+    exit(-3);
+  }
+
   preset = fopen ("preset.json", "w");
+  if (preset == NULL)
+  {
+    printf("Failed to open the output file.");
+    exit(-4);
+  }
 
   add_beginning(beginning, preset);
   read_bands(frd, bands, &counter);
@@ -141,6 +165,7 @@ void main()
     counter2++;
   }
   calculate_widths(final_bands);
+  
   for (int i = 0; i < NUMBANDS; i++)
 	{
 		  if (i + 1  != NUMBANDS) {
